@@ -1,0 +1,92 @@
+trigger:
+- Development
+- uat
+- scorea
+
+pool: Atradius-Self-Hosted
+
+variables:
+  - name: env
+    ${{ if eq(variables['build.sourceBranch'], 'refs/heads/scorea') }} : 
+      value: "scora"
+    ${{ if eq(variables['build.sourceBranch'], 'refs/heads/Development') }} : 
+      value: "scorf"
+    ${{ if eq(variables['build.sourceBranch'], 'refs/heads/uat') }} : 
+      value: "scorg"
+  - name: score_user
+    ${{ if eq(variables['env'], 'scora') }} : 
+      value: "scorf"
+    ${{ if eq(variables['env'], 'scorf') }} : 
+      value: "scorf"
+    ${{ if eq(variables['env'], 'scorg') }} : 
+      value: "scorg"
+  - name: envparam
+    ${{ if eq(variables['env'], 'scora') }} : 
+      value: "dev"
+    ${{ if eq(variables['env'], 'scorf') }} : 
+      value: "dev"
+    ${{ if eq(variables['env'], 'scorg') }} : 
+      value: "uat"
+  - name: score_user
+    ${{ if eq(variables['env'], 'scora') }} : 
+      value: "scorf"
+    ${{ if eq(variables['env'], 'scorf') }} : 
+      value: "scorf"
+    ${{ if eq(variables['env'], 'scorg') }} : 
+      value: "scorg"
+  - name: server
+    ${{ if eq(variables['env'], 'prod') }} :
+      value: "gl05"
+    ${{ else }}:
+      value: "gl11"
+
+steps:
+  - bash: 
+      echo $(env) $(score_user) $(server)
+  - task: CmdLine@2
+    displayName: SSH to ${{ variables.server }}
+    inputs:
+      script: |
+        ssh -o StrictHostKeyChecking=no ${{ variables.server }} << EOF1
+        cd /azure/scoreautomationfiles
+        rm -rf *
+        sudo -i -u ${{ variables.score_user }} << EOF2
+        cd /citman/${{variables.env}}
+        rm -rf bin
+        rm -rf ctl
+        rm -rf params
+        rm -rf python
+        rm -rf sql
+        rm -rf shared
+        rm -f *.ksh
+        EOF2
+        EOF1
+  - task: CmdLine@2
+    displayName: Copying the files
+    inputs:
+      script: |
+        scp -r -o StrictHostKeyChecking=no $(Build.SourcesDirectory)/* ${{variables.server}}:/azure/scoreautomationfiles
+
+  - task: CmdLine@2
+    displayName: SSH to ${{variables.server}} and copying the file
+    inputs:
+      script: |
+        ssh -o StrictHostKeyChecking=no ${{ variables.server }} << EOF1
+        cd /azure/scoreautomationfiles
+        chown azure:scusr *
+        rm -rf azure-pipelines.yml
+        rm -rf README.md
+        sudo -i -u ${{ variables.score_user }} << EOF2
+        cd /azure/scoreautomationfiles
+        cp -r !(lost+found) /citman/${{ variables.env }}/
+        cd /citman/${{ variables.env }}/params
+        rm -rf !(${{ variables.envparam }}|set_env_var)
+        mv ${{ variables.envparam }}/* .
+        rmdir ${{ variables.envparam }}
+        chmod 775 set_env_var   
+        cd /citman/${{ variables.env }}
+        chmod 775 *.ksh
+        EOF2
+        EOF1
+
+

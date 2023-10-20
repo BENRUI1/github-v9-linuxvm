@@ -1,0 +1,3 @@
+Insert into LOV_IMX_EVENTS_CONSUMERS (ACTION, INTERFACE_CODE, COMMENTS, ACTIVE) values ('DB INIT CALL RATING AGENCY','CREDITSAFE','Triggering the CS interface for fetching the rating upon a new debtor entry','Y');
+Insert into LOV_IMX_EVENTS_CONSUMERS (ACTION, INTERFACE_CODE, COMMENTS, ACTIVE) values ('DB UPD CALL RATING AGENCY','CREDITSAFE','Triggering the CS interface for fetching the rating upon an update of an existing debtor','Y');
+commit;

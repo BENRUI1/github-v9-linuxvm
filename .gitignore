@@ -1,0 +1,14 @@
+# .gitignore file
+azure-pipelines copy.yml
+python/local.settings.json
+*.pyc
+.venv/
+.vscode/
+.env
+collections-scoreV9-scripts.code-workspace
+python/test.py
+.me/
+ecb_daily_rates.xml
+rates.txt
+*.env
+__azurite*.json
